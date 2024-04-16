@@ -1,0 +1,94 @@
+@font-face {
+  font-family: "WAGURITTF";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2403@1.0/WAGURITTF.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "JalnanGothic";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_231029@1.1/JalnanGothic.woff")
+    format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+body {
+  background: #000;
+  height: 100vh;
+  width: 100vw;
+  /* position: relative; */
+}
+.hwanflix {
+  font-family: "JalnanGothic";
+  color: #be213f;
+  display: flex;
+  justify-content: center;
+  /* position: absolute;
+  left: 50%;
+  transform: translateX(-50%); */
+}
+.mvForm {
+  display: flex;
+  justify-content: center;
+  flex-flow: column;
+  align-items: center;
+}
+.mvSearch [type="input"] {
+  border: none;
+  border-radius: 0.7em;
+  height: 30px;
+  width: 400px;
+}
+.mvSearch [type="submit"] {
+  border: none;
+  border-radius: 0.7em;
+  height: 30px;
+  background-color: #be213f;
+  color: aliceblue;
+  font-family: "JalnanGothic";
+}
+.movies {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  width: 500px;
+  text-align: center;
+  padding-top: 30px;
+}
+.mvContent {
+  position: relative;
+  margin-bottom: 30px;
+}
+.mvContent .mvImage {
+  width: 210px;
+  height: 300px;
+  overflow: hidden;
+  margin: 0 auto;
+  filter: blur(0) grayscale(0);
+  border-radius: 3em;
+  transition: 0.5s;
+}
+.mvContent .mvImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mvContent .mvTitle {
+  position: absolute;
+  width: 100%;
+  top: 50%;
+  left: 50%;
+  transition: 2s;
+  display: none;
+}
+.mvContent .mvTitle span p {
+  font-family: "JalnanGothic";
+  font-size: 20px;
+  color: #df4f69;
+}
+.mvContent:hover .mvTitle {
+  display: block;
+  transform: translate(-50%, -50%);
+}
+.mvContent:hover .mvImage {
+  filter: blur(4px) grayscale(100%);
+}
