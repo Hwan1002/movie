@@ -5,10 +5,10 @@
      * @description Element 스타일 핸들러
      * @return {void}
      */
-    const initStyle = () => {
+      const initStyle = () => {
       const inputNode = document.querySelector("#searchKey");
-    //   inputNode instanceof HTMLInputElement && (inputNode.style.padding = "0.25rem 1rem");
-    //   inputNode instanceof HTMLInputElement && (inputNode.style.outline = "none");
+        //   inputNode instanceof HTMLInputElement && (inputNode.style.padding = "0.25rem 1rem");
+        //   inputNode instanceof HTMLInputElement && (inputNode.style.outline = "none");
     };
   
     /**
@@ -41,19 +41,19 @@
       for(data of result.Search){
         console.log(data);
         // const obj = JSON.stringify(data);
-        const movies = document.getElementById("movies");
+        const mvForm = document.getElementsByClassName("mvForm");
+        const mvContent = document.createElement("div").className = 'mvContent';
+        const mvImage = document.createElement("div").className ='mvImage';
+        const mvposter = document.createElement("img");
 
-        const mvImg = document.getElementById("mvImg");
-
-        const mvposter = document.createElement("img").src=data["Poster"];
-        const poster= mvImg.appendChild(mvposter);
+        mvForm.append(mvContent);
 
         const moviePtag = document.createElement("p");
         moviePtag.style.padding = "1rem 1rem";
         moviePtag.style.color="#fff";
         moviePtag.innerHTML = data["Title"];
 
-        const title = movies.appendChild(moviePtag);
+        const title = mvContent.appendChild(moviePtag);
       }
     } catch (error) {
       console.error(error);
