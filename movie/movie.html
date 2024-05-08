@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="v"iewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./mvstyle.css">
     <title>Hwanflix</title>
 </head>
@@ -17,9 +17,11 @@
     <form class="mvForm">
         <div class="mvSearch">
             <input type="text" placeholder="영화를 검색해보세요." name="searchKey" id="searchKey" value="">
-            <button type="submit" id="searchBtn">Search</button>
+            <button type="button" role="button" onclick="onSearch();">Search</button>
         </div>
-        <div id="movies"></div>
+        <div id="movies">
+            <div id="mvImg"></div>
+        </div>
         <!-- <div class="movies wraps">
             <div class="mvContent">
                 <div class="mvImage">
