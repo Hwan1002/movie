@@ -7,8 +7,6 @@
      */
       const initStyle = () => {
       const inputNode = document.querySelector("#searchKey");
-        //   inputNode instanceof HTMLInputElement && (inputNode.style.padding = "0.25rem 1rem");
-        //   inputNode instanceof HTMLInputElement && (inputNode.style.outline = "none");
     };
   
     /**
@@ -23,7 +21,6 @@
       }
     };
     document.addEventListener("keydown", onBlockEnter);
-
     initStyle();
   })();
   
@@ -32,34 +29,96 @@
    */
   const onSearch = async () => {
     try {
-      debugger;
-      const s = document.getElementById("searchKey").value;
-      const url = `https://www.omdbapi.com/?i=tt3896198&apikey=9172b236&s=${s}`;
-      const response = await fetch(url);
-      const result = await response.json();
+        const s = document.getElementById("searchKey").value;
+        const url = `https://www.omdbapi.com/?i=tt3896198&apikey=9172b236&s=${s}`;
 
-      for(data of result.Search){
-        console.log(data);
-        // const obj = JSON.stringify(data);
-        const mvForm = document.getElementsByClassName("mvForm");
-        const mvContent = document.createElement("div").className = 'mvContent';
-        const mvImage = document.createElement("div").className ='mvImage';
-        const mvposter = document.createElement("img");
+        const response = await fetch(url);
+        const result = await response.json();
+        const totalResult = result.totalResults;
+        const totalPage = Math.ceil(totalResult/10); 
+        
+        //iron man 검색했을경우 반올림 13 페이지 까지 나와야함
+        
+        for(const [index, data] of Object.entries(result.Search)){
+            //mvcontent div영역
+            const divNodeDummy = document.createElement('div');
+            divNodeDummy.classList.add('mvContent');
+            
+            //위에 안에 있는 mvImage div 영역
+            const divImgNode = document.createElement('div');
+            divImgNode.classList.add('mvImage');
+            
+            //img 태그 
+            const imgNode = document.createElement('img');
+            imgNode.src=data['Poster'];
+            
+            //mvTitle 영역
+            const divTitle = document.createElement('div');
+            divTitle.classList.add('mvTitle');
+            const spanNode = document.createElement('span');
+            spanNode.innerHTML = `<p class="p1" value="Good Times">${data["Title"]}</p><p class="p2">${data["Type"]}</p>`;
 
-        mvForm.append(mvContent);
+            divTitle.appendChild(spanNode);
+            divImgNode.appendChild(imgNode);
+            divNodeDummy.appendChild(divImgNode);
+            divNodeDummy.appendChild(divTitle);
 
-        const moviePtag = document.createElement("p");
-        moviePtag.style.padding = "1rem 1rem";
-        moviePtag.style.color="#fff";
-        moviePtag.innerHTML = data["Title"];
+            document.querySelector('.movies').appendChild(divNodeDummy);
+        }
+            
+        window.onscroll = async function(){
+            if((window.innerHeight + scrollY) >= document.body.offsetHeight){
+                for(let i=0; i<=totalPage; i++){
+                    debugger;
+                    const url = `https://www.omdbapi.com/?i=tt3896198&apikey=9172b236&s=${s}&page=${i}`;
+                    const response = await fetch(url);
+                    const result = await response.json();
 
-        const title = mvContent.appendChild(moviePtag);
-      }
+                    for(const [index, data] of Object.entries(result.Search)){
+                        //mvcontent div영역
+                        const divNodeDummy = document.createElement('div');
+                        divNodeDummy.classList.add('mvContent');
+                        
+                        //위에 안에 있는 mvImage div 영역
+                        const divImgNode = document.createElement('div');
+                        divImgNode.classList.add('mvImage');
+                        
+                        //img 태그 
+                        const imgNode = document.createElement('img');
+                        imgNode.src=data['Poster'];
+                        
+                        //mvTitle 영역
+                        const divTitle = document.createElement('div');
+                        divTitle.classList.add('mvTitle');
+                        const spanNode = document.createElement('span');
+                        spanNode.innerHTML = `<p class="p1" value="Good Times">${data["Title"]}</p><p class="p2">${data["Type"]}</p>`;
+    
+                        divTitle.appendChild(spanNode);
+                        divImgNode.appendChild(imgNode);
+                        divNodeDummy.appendChild(divImgNode);
+                        divNodeDummy.appendChild(divTitle);
+    
+                        document.querySelector('.movies').appendChild(divNodeDummy);
+                    }
+                }       
+                
+            }
+        }
+
     } catch (error) {
-      console.error(error);
+        console.log('에러 원인 : ' + error);
+      const err = document.createElement('p');
+      err.className = 'errMsg';
+      err.innerText = '검색 결과가 없습니다.';
+      document.querySelector('.movies').appendChild(err);
     }
+    
   };
   
+  
+
+
+
   //데이터 가져오는 api
   // const searchBtn = document.getElementById("searchBtn");
   

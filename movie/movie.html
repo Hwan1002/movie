@@ -8,90 +8,23 @@
     <title>Hwanflix</title>
 </head>
 <body>
-    <div class="hwanflix">
-        <h1>HWANFLIX</h1>
-        <p>환석이의 환쁠릭스</p>
-    </div>
-        
-    </div>
-    <form class="mvForm">
+    <script src="mvjs.js"></script> 
+
+    <div class="fixed">
+        <div class="hwanflix">
+            <h1>HWANFLIX</h1>
+            <p>환석이의 싸발적인 환쁠릭스</p>
+        </div>
+
         <div class="mvSearch">
             <input type="text" placeholder="영화를 검색해보세요." name="searchKey" id="searchKey" value="">
             <button type="button" role="button" onclick="onSearch();">Search</button>
         </div>
-        <div id="mvContent">
-            <div id="mvImage"></div>
-        </div>
-        <!-- <div class="movies wraps">
-            <div class="mvContent">
-                <div class="mvImage">
-                    <img src="img/movie1.jpg" alt="1">
-                </div>
-                <div class="mvTitle">
-                    <span>
-                        <p class="p1" value="Good Times">Good Times</p>
-                        <p class="p2">장르</p>
-                    </span>
-                </div>
-            </div>
-            <div class="mvContent" >
-                <div class="mvImage">
-                    <img src="img/movie2.jpg" alt="2">
-                </div>
-                <div class="mvTitle">
-                    <span>
-                        <p class="p1" value="the boy">The Boy</p>
-                        <p class="p2">장르</p>
-                    </span>
-                </div>
-            </div>
-            <div class="mvContent">
-                <div class="mvImage">
-                    <img src="img/movie3.jpg" alt="3">
-                </div>
-                <div class="mvTitle">
-                    <span>
-                        <p class="p1" value="lost dream">Lost Dream</p>
-                        <p class="p2">장르</p>
-                    </span>
-                </div>
-            </div>
-            <div class="mvContent">
-                <div class="mvImage">
-                    <img src="img/movie4.jpg" alt="4">
-                </div>
-                <div class="mvTitle">
-                    <span>
-                        <p class="p1" value="lorem">Lorem</p>
-                        <p class="p2">장르</p>
-                    </span>
-                </div>
-            </div>
-            <div class="mvContent">
-                <div class="mvImage">
-                    <img src="img/movie5.jpg" alt="5">
-                </div>
-                <div class="mvTitle">
-                    <span>
-                        <p class="p1" value="Quality Film">Quality Film</p>
-                        <p class="p2">장르</p>
-                    </span>
-                </div>
-            </div>
-            <div class="mvContent">
-                <div class="mvImage">
-                    <img src="img/movie6.jpg" alt="6">
-                </div>
-                <div class="mvTitle">
-                    <span>
-                        <p class="p1" value="powerpuff flowers">Powepuff Flowers</p>
-                        <p class="p2">장르</p>
-                    </span>
-                </div>
-            </div>
-        </div> -->
-    </form>
-    <script src="mvjs.js"></script> 
-    
+    </div>    
+
+    <div class="mvForm" id="mvForm">
+        <div class="movies wraps"></div>
+    </div>
+
 </body>
 </html>

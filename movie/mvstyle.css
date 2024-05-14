@@ -14,19 +14,16 @@
 body {
   background: #000;
   height: 100vh;
-  width: 100vw;
-  /* position: relative; */
 }
-.hwanflix {
+.fixed {
   font-family: "JalnanGothic";
   color: #be213f;
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  align-items: center;
-  /* position: absolute;
-  left: 50%;
+  text-align: center;
+  /* left: 50%;
   transform: translateX(-50%); */
+}
+.hwanflix {
+  text-align: center;
 }
 .hwanflix h1 {
   margin-block-end: 0;
@@ -44,6 +41,7 @@ body {
   flex-flow: column;
   align-items: center;
 }
+
 .mvSearch [type="text"] {
   border: none;
   border-radius: 0.7em;
@@ -65,12 +63,16 @@ body {
   text-align: center;
   padding-top: 30px;
 }
+.movies > p {
+  color: #fff;
+  font-size: 20px;
+}
 
-#mvContent {
+.mvContent {
   position: relative;
   margin-bottom: 30px;
 }
-#mvContent #mvImage {
+.mvContent .mvImage {
   width: 210px;
   height: 300px;
   overflow: hidden;
@@ -79,12 +81,12 @@ body {
   border-radius: 3em;
   transition: 0.5s;
 }
-#mvContent #mvImage img {
+.mvContent .mvImage img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-#mvContent #mvTitle {
+.mvContent .mvTitle {
   position: absolute;
   width: 100%;
   top: 50%;
@@ -92,15 +94,18 @@ body {
   transition: 2s;
   display: none;
 }
-#mvContent #mvTitle span p {
+.mvContent .mvTitle span p {
   font-family: "JalnanGothic";
   font-size: 20px;
-  color: #df4f69;
+  color: #fa493c;
 }
-#mvContent:hover #mvTitle {
+.mvContent:hover .mvTitle {
   display: block;
   transform: translate(-50%, -50%);
 }
-#mvContent:hover #mvImage {
+.mvContent:hover .mvImage {
   filter: blur(4px) grayscale(100%);
 }
+
+/* const div = document.createElement("div");
+        const movies = document.querySelector("mvForm").appendChild(div).className='movies'; */
