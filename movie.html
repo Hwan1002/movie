@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./mvstyle.css">
+    <title>Hwanflix</title>
+</head>
+<body>
+    <script src="mvjs.js"></script> 
+
+    <div class="fixed">
+        <div class="hwanflix">
+            <h1>HWANFLIX</h1>
+            <p>환석이의 환쁠릭스</p>
+        </div>
+
+        <div class="mvSearch">
+            <input type="text" placeholder="영화를 검색해보세요." name="searchKey" id="searchKey" value="">
+            <button type="button" role="button" onclick="onSearch();">Search</button>
+        </div>
+
+            <button type="button" class="favBtn" role="button" onclick="favorClicked()">즐겨찾기</button>
+    </div>    
+
+    <div class="mvForm" id="mvForm">
+        <div class="movies wraps">
+        </div>
+    </div>
+
+</body>
+</html>
