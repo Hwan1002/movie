@@ -1,0 +1,239 @@
+@font-face {
+  font-family: "WAGURITTF";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2403@1.0/WAGURITTF.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "JalnanGothic";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_231029@1.1/JalnanGothic.woff")
+    format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+body {
+  background: #000;
+  height: 100vh;
+}
+.fixed {
+  font-family: "JalnanGothic";
+  text-align: center;
+  position: fixed;
+  z-index: 1;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  /* left: 50%;
+  transform: translateX(-50%); */
+}
+/* .hwanflix {
+  text-align: center;
+} */
+.hwanflix a {
+  color: #be213f;
+  margin-block-end: 0;
+  text-decoration: none;
+}
+.hwanflix p {
+  font-size: 0.8em;
+  color: #fff;
+  font-family: WAGURITTF;
+  margin-block-start: 0;
+  font-weight: 100;
+}
+.mvForm {
+  display: flex;
+  justify-content: center;
+  /* flex-flow: column;
+  align-items: center; */
+}
+
+.searchKey {
+  border: none;
+  border-radius: 0.7em;
+  background: rgb(43, 42, 42);
+  height: 30px;
+  width: 400px;
+  color: #fff;
+}
+.mvSearch [type="button"] {
+  border: none;
+  border-radius: 0.7em;
+  height: 2.5em;
+  background-color: #be213f;
+  color: aliceblue;
+}
+
+.favBtn,
+.searchBtn,
+.backBtn {
+  margin-top: 2em;
+  width: 6em;
+  height: 2.5em;
+  background: #be213f;
+  border-radius: 25px;
+  color: #fff;
+  font-family: "JalnanGothic";
+  font-size: 1.5rem;
+  border: none;
+}
+
+.movies,
+.favorites {
+  margin-top: 25%;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  width: 500px;
+  text-align: center;
+  padding-top: 2em;
+  position: relative;
+  transition: all 0.4s;
+  overflow: hidden;
+}
+.hide {
+  display: none;
+}
+.movies > p {
+  color: #fff;
+  font-size: 20px;
+}
+.movies > div {
+  transform: scale(1);
+  opacity: 1;
+}
+.visible {
+  transition: all 0.5s ease-in-out;
+  transform: scale(1.5);
+  opacity: 0;
+}
+
+.mvContent {
+  position: relative;
+  margin-bottom: 30px;
+}
+.mvImage {
+  width: 210px;
+  height: 300px;
+  overflow: hidden;
+  margin: 0 auto;
+  filter: blur(0) grayscale(0);
+  border-radius: 3em;
+  transition: 0.5s;
+}
+.mvImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mvTitle {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  top: 50%;
+  left: 50%;
+  transition: 2s;
+  display: none;
+}
+.mvTitle span p {
+  font-family: "JalnanGothic";
+  font-size: 20px;
+  color: #fa493c;
+}
+.mvTitle .type {
+  font-size: 15px;
+}
+
+.btn {
+  font-family: "WAGURITTF";
+  width: 8em;
+  height: 2em;
+  background: transparent;
+  color: #fa493c;
+  font-size: 12px;
+  border: 2px solid #fa493c;
+  border-radius: 20px;
+  position: relative;
+  transition: all 0.4s;
+  overflow: hidden;
+}
+.mainBtn {
+  position: relative;
+  transition: all 0.4s;
+  overflow: hidden;
+}
+.mainBtn::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgb(240, 92, 92);
+  left: 100%;
+  top: 0;
+  transition: all 0.4s;
+  z-index: -1;
+}
+.mainBtn:hover::before {
+  transform: translateX(-100%);
+}
+.mainBtn:hover {
+  color: #fa493c;
+  font-weight: bold;
+}
+.btn:focus {
+  outline: none;
+}
+.btn::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #fa493c;
+  border-radius: 20px;
+  left: 0;
+  top: 100%;
+  transition: all 0.4s;
+  z-index: -1;
+}
+.mvTitle img {
+  width: 2em;
+  height: 2em;
+}
+
+.mvContent:hover .mvTitle {
+  display: block;
+  transform: translate(-50%, -50%);
+}
+.mvContent:hover .mvImage {
+  filter: blur(4px) grayscale(100%);
+}
+.btn:hover::before {
+  transform: translateY(-100%);
+}
+.btn:hover {
+  color: gold;
+  font-weight: bold;
+}
+
+/* 즐겨찾기 영역 */
+.favorites .mvTitle .btn ₩ {
+  content: "CANCEL";
+}
+
+#modalContent {
+  font-size: 1em;
+  font-family: JalnanGothic;
+  border-radius: 20%;
+  position: absolute;
+  background-color: #ec365d;
+  width: 200px;
+  height: 100px;
+  padding: 15px;
+  text-align: center;
+}
+
+.checkAns {
+  color: #fff;
+}
+/* const div = document.createElement("div");
+        const movies = document.querySelector("mvForm").appendChild(div).className='movies'; */
