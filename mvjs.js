@@ -32,6 +32,8 @@ const state = {
     inputValue: "",
     totalPage: 0,
     isProcessing: false,
+    type: "", // 타입 필터 (movie | series | episode)
+    year: "", // 연도 필터
 };
 
 // 자주 쓰는 DOM 요소 (script가 defer라 DOM 준비 후 실행됨)
@@ -43,6 +45,8 @@ const $favBtn = document.querySelector(".favBtn");
 const $searchBtn = document.querySelector(".searchBtn");
 const $searchBar = document.querySelector(".mvSearch");
 const $searchInput = document.querySelector("#searchKey");
+const $typeFilter = document.querySelector("#typeFilter");
+const $yearFilter = document.querySelector("#yearFilter");
 const $recentWrap = document.querySelector(".recentKeywords");
 const $loader = document.querySelector(".loaderWrap");
 const $sentinel = document.querySelector(".sentinel");
@@ -52,10 +56,25 @@ const $modal = document.querySelector(".modal");
 const $toast = document.querySelector(".toast");
 
 // ===== API =====
+// 같은 검색(키워드+필터+페이지)은 다시 호출하지 않도록 메모리에 캐싱 (무료 키 일일 한도 절약)
+const searchCache = new Map();
+
 const fetchMovies = async (keyword, page = 1) => {
-    const url = `https://www.omdbapi.com/?apikey=${API_KEY}&s=${encodeURIComponent(keyword)}&page=${page}`;
-    const response = await fetch(url);
-    return response.json();
+    const cacheKey = `${keyword}|${state.type}|${state.year}|${page}`;
+    if (searchCache.has(cacheKey)) {
+        return searchCache.get(cacheKey);
+    }
+
+    const params = new URLSearchParams({ apikey: API_KEY, s: keyword, page });
+    if (state.type) params.set("type", state.type);
+    if (state.year) params.set("y", state.year);
+
+    const response = await fetch(`https://www.omdbapi.com/?${params}`);
+    const data = await response.json();
+    if (data.Response === "True") {
+        searchCache.set(cacheKey, data); // 성공한 응답만 캐싱
+    }
+    return data;
 };
 
 const fetchMovieDetail = async (imdbID) => {
@@ -91,6 +110,7 @@ const loadFavorites = () => loadList(FAVORITE_KEY);
 const saveFavorites = (favorites) => {
     localStorage.setItem(FAVORITE_KEY, JSON.stringify(favorites));
 };
+const isFavorited = (imdbID) => loadFavorites().some((favorite) => favorite.imdbID === imdbID);
 
 // ===== 최근 검색어 =====
 const saveRecentKeyword = (keyword) => {
@@ -168,6 +188,7 @@ const renderModal = (detail) => {
             <h2>${detail.Title}</h2>
             <p class="modalMeta">${detail.Year} · ${detail.Runtime} · ${detail.Genre}</p>
             <p class="modalRating">${rating}</p>
+            <button type="button" class="btn modalFavBtn"></button>
             <dl>
                 <dt>감독</dt><dd>${detail.Director}</dd>
                 <dt>출연</dt><dd>${detail.Actors}</dd>
@@ -176,6 +197,28 @@ const renderModal = (detail) => {
         </div>`;
 
     $modal.querySelector(".modalClose").onclick = closeModal;
+
+    // 모달 안에서 즐겨찾기 추가/해제 토글
+    const $modalFavBtn = $modal.querySelector(".modalFavBtn");
+    const movieSummary = {
+        Title: detail.Title,
+        Year: detail.Year,
+        imdbID: detail.imdbID,
+        Type: detail.Type,
+        Poster: detail.Poster,
+    };
+    const syncFavLabel = () => {
+        $modalFavBtn.innerText = isFavorited(detail.imdbID) ? "CANCEL" : "LOVE IT!";
+    };
+    syncFavLabel();
+    $modalFavBtn.onclick = () => {
+        if (isFavorited(detail.imdbID)) {
+            cancelClicked(movieSummary);
+        } else {
+            loveClicked(movieSummary);
+        }
+        syncFavLabel();
+    };
 };
 
 // ===== 카드 등장 애니메이션 =====
@@ -201,6 +244,7 @@ const createMovieCard = (movie, isFavorite) => {
     const img = document.createElement("img");
     img.src = movie.Poster && movie.Poster !== "N/A" ? movie.Poster : PLACEHOLDER_POSTER;
     img.alt = movie.Title;
+    img.loading = "lazy"; // 화면 밖 포스터는 스크롤 시점에 로드
     img.onerror = () => {
         img.onerror = null; // 대체 이미지도 실패할 경우 무한 루프 방지
         img.src = PLACEHOLDER_POSTER;
@@ -310,6 +354,8 @@ const startSearch = async (keyword, makeTitle) => {
     if (state.isProcessing) return;
 
     state.isProcessing = true;
+    state.type = $typeFilter.value;
+    state.year = $yearFilter.value;
     showLoader();
     try {
         const result = await fetchMovies(keyword);
@@ -343,12 +389,22 @@ const startSearch = async (keyword, makeTitle) => {
     }
 };
 
+// 검색 상태를 URL 쿼리에 반영 (새로고침·뒤로가기·링크 공유 가능)
+const syncURL = (keyword) => {
+    const params = new URLSearchParams();
+    params.set("s", keyword);
+    if ($typeFilter.value) params.set("type", $typeFilter.value);
+    if ($yearFilter.value) params.set("y", $yearFilter.value);
+    history.pushState(null, "", `?${params.toString()}`);
+};
+
 const onSearch = () => {
     const keyword = $searchInput.value.trim();
     if (!keyword) return;
 
     saveRecentKeyword(keyword);
     renderRecentKeywords();
+    syncURL(keyword);
     startSearch(keyword, (total) => `'${keyword}' 검색 결과 (${total}편)`);
 };
 
@@ -426,5 +482,38 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$modalOverlay.classList.contains("hide")) closeModal();
 });
 
+// 필터 변경 시 현재 검색어로 즉시 재검색
+[$typeFilter, $yearFilter].forEach((select) =>
+    select.addEventListener("change", () => {
+        if ($searchInput.value.trim()) onSearch();
+    })
+);
+
 // ===== 초기 화면 =====
-showRecommendation();
+// 연도 필터 옵션 채우기 (올해 ~ 1970)
+const thisYear = new Date().getFullYear();
+for (let year = thisYear; year >= 1970; year--) {
+    const option = document.createElement("option");
+    option.value = year;
+    option.innerText = year;
+    $yearFilter.appendChild(option);
+}
+
+// URL 쿼리(?s=키워드&type=...&y=...)가 있으면 해당 검색 복원, 없으면 오늘의 추천
+const initFromURL = () => {
+    const params = new URLSearchParams(location.search);
+    const keyword = params.get("s");
+    $typeFilter.value = params.get("type") || "";
+    $yearFilter.value = params.get("y") || "";
+
+    if (keyword) {
+        $searchInput.value = keyword;
+        startSearch(keyword, (total) => `'${keyword}' 검색 결과 (${total}편)`);
+    } else {
+        $searchInput.value = "";
+        showRecommendation();
+    }
+};
+
+window.addEventListener("popstate", initFromURL); // 뒤로가기/앞으로가기 시 검색 상태 복원
+initFromURL();

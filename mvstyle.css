@@ -73,6 +73,27 @@ body {
 .searchKey:focus {
   outline: 2px solid #be213f;
 }
+.mvSearch {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4em;
+  margin-top: 1em;
+}
+.mvSearch.hide {
+  display: none;
+}
+.mvSearch select {
+  border: none;
+  border-radius: 0.7em;
+  background: rgb(43, 42, 42);
+  color: #fff;
+  height: 30px;
+  padding: 0 0.5em;
+  font-family: "JalnanGothic";
+  cursor: pointer;
+}
 .mvSearch button {
   border: none;
   border-radius: 0.7em;
@@ -356,6 +377,10 @@ body {
 .modalRating {
   margin: 0 0 1em;
   color: gold;
+}
+.modalFavBtn {
+  display: block;
+  margin-bottom: 1.2em;
 }
 .modalInfo dl {
   margin: 0 0 1em;

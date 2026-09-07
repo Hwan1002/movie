@@ -17,6 +17,15 @@
             <button type="button" class="searchBtn mainBtn">검색</button>
             <div class="mvSearch hide">
                 <input type="text" placeholder="영화를 검색해보세요." class="searchKey" id="searchKey">
+                <select id="typeFilter" aria-label="타입 필터">
+                    <option value="">전체</option>
+                    <option value="movie">영화</option>
+                    <option value="series">시리즈</option>
+                    <option value="episode">에피소드</option>
+                </select>
+                <select id="yearFilter" aria-label="연도 필터">
+                    <option value="">연도</option>
+                </select>
                 <button type="button">Search</button>
             </div>
             <button type="button" class="favBtn mainBtn">즐겨찾기</button>
