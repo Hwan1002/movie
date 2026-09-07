@@ -246,7 +246,7 @@ const renderModal = (detail) => {
             <p class="modalRating">${rating}</p>
             <div class="modalBtns">
                 <button type="button" class="btn modalFavBtn"></button>
-                <button type="button" class="btn modalShareBtn">공유하기</button>
+                <button type="button" class="btn btnGhost modalShareBtn">공유하기</button>
             </div>
             <div class="myRecord hide">
                 <p class="myRecordTitle">📝 내 기록</p>
@@ -279,7 +279,9 @@ const renderModal = (detail) => {
         Poster: detail.Poster,
     };
     const syncFavLabel = () => {
-        $modalFavBtn.innerText = isFavorited(detail.imdbID) ? "CANCEL" : "LOVE IT!";
+        const favorited = isFavorited(detail.imdbID);
+        $modalFavBtn.innerText = favorited ? "✕ CANCEL" : "♥ LOVE IT!";
+        $modalFavBtn.classList.toggle("btnCancel", favorited);
     };
 
     // 내 기록 섹션: 즐겨찾기한 영화만 별점/봤어요/한 줄 감상 편집 가능
@@ -385,10 +387,11 @@ const createMovieCard = (movie, isFavorite) => {
     btn.classList.add("btn");
     btn.type = "button";
     if (isFavorite) {
-        btn.innerText = "CANCEL";
+        btn.innerText = "✕ CANCEL";
+        btn.classList.add("btnCancel");
         btn.onclick = () => cancelClicked(movie);
     } else {
-        btn.innerText = "LOVE IT!";
+        btn.innerText = "♥ LOVE IT!";
         btn.onclick = () => loveClicked(movie);
     }
 
