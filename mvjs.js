@@ -127,6 +127,18 @@ const saveFavorites = (favorites) => {
     localStorage.setItem(FAVORITE_KEY, JSON.stringify(favorites));
 };
 const isFavorited = (imdbID) => loadFavorites().some((favorite) => favorite.imdbID === imdbID);
+const getFavoriteById = (imdbID) => loadFavorites().find((favorite) => favorite.imdbID === imdbID);
+
+// 즐겨찾기 항목의 내 기록(별점/감상/봤어요) 부분 수정
+const updateFavorite = (imdbID, patch) => {
+    const favorites = loadFavorites().map((movie) =>
+        movie.imdbID === imdbID ? { ...movie, ...patch } : movie
+    );
+    saveFavorites(favorites);
+    if (!$favorites.classList.contains("hide")) {
+        renderFavorites(); // 즐겨찾기 화면이 열려 있으면 즉시 반영
+    }
+};
 
 // 즐겨찾기 버튼에 저장 개수 뱃지 표시 (즐겨찾기 화면에서는 '돌아가기'이므로 갱신 안 함)
 const refreshFavBtn = () => {
@@ -236,6 +248,17 @@ const renderModal = (detail) => {
                 <button type="button" class="btn modalFavBtn"></button>
                 <button type="button" class="btn modalShareBtn">공유하기</button>
             </div>
+            <div class="myRecord hide">
+                <p class="myRecordTitle">📝 내 기록</p>
+                <div class="recordRow">
+                    <span class="starRow"></span>
+                    <button type="button" class="chip watchedToggle"></button>
+                </div>
+                <div class="memoRow">
+                    <input type="text" class="memoInput" placeholder="한 줄 감상을 남겨보세요." maxlength="60">
+                    <button type="button" class="chip memoSave">저장</button>
+                </div>
+            </div>
             <dl>
                 <dt>감독</dt><dd>${detail.Director}</dd>
                 <dt>출연</dt><dd>${detail.Actors}</dd>
@@ -258,7 +281,55 @@ const renderModal = (detail) => {
     const syncFavLabel = () => {
         $modalFavBtn.innerText = isFavorited(detail.imdbID) ? "CANCEL" : "LOVE IT!";
     };
+
+    // 내 기록 섹션: 즐겨찾기한 영화만 별점/봤어요/한 줄 감상 편집 가능
+    const $record = $modal.querySelector(".myRecord");
+    const $starRow = $modal.querySelector(".starRow");
+    const $watchedToggle = $modal.querySelector(".watchedToggle");
+    const $memoInput = $modal.querySelector(".memoInput");
+
+    const renderRecord = () => {
+        const favorite = getFavoriteById(detail.imdbID);
+        if (!favorite) {
+            $record.classList.add("hide");
+            return;
+        }
+        $record.classList.remove("hide");
+
+        // 별점: 같은 별을 다시 누르면 취소
+        $starRow.innerHTML = "";
+        const rating = favorite.myRating || 0;
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElement("button");
+            star.type = "button";
+            star.classList.add("starBtn");
+            star.innerText = i <= rating ? "★" : "☆";
+            star.onclick = () => {
+                updateFavorite(detail.imdbID, { myRating: i === rating ? 0 : i });
+                renderRecord();
+            };
+            $starRow.appendChild(star);
+        }
+
+        $watchedToggle.innerText = favorite.watched ? "✔ 본 영화" : "👁 볼 영화";
+        $watchedToggle.classList.toggle("chipActive", Boolean(favorite.watched));
+        $memoInput.value = favorite.memo || "";
+    };
+
+    $watchedToggle.onclick = () => {
+        const favorite = getFavoriteById(detail.imdbID);
+        if (!favorite) return;
+        updateFavorite(detail.imdbID, { watched: !favorite.watched });
+        renderRecord();
+    };
+    $modal.querySelector(".memoSave").onclick = () => {
+        if (!getFavoriteById(detail.imdbID)) return;
+        updateFavorite(detail.imdbID, { memo: $memoInput.value.trim() });
+        showToast("한 줄 감상이 저장되었습니다.");
+    };
+
     syncFavLabel();
+    renderRecord();
     $modalFavBtn.onclick = () => {
         if (isFavorited(detail.imdbID)) {
             cancelClicked(movieSummary);
@@ -266,6 +337,7 @@ const renderModal = (detail) => {
             loveClicked(movieSummary);
         }
         syncFavLabel();
+        renderRecord(); // 즐겨찾기 여부에 따라 기록 섹션 표시/숨김
     };
 };
 
@@ -320,7 +392,31 @@ const createMovieCard = (movie, isFavorite) => {
         btn.onclick = () => loveClicked(movie);
     }
 
-    span.append(titleP, typeP, btn);
+    span.append(titleP, typeP);
+
+    // 즐겨찾기 카드에는 내 기록(봤어요 뱃지 / 별점 / 한 줄 감상) 표시
+    if (isFavorite) {
+        if (movie.watched) {
+            const badge = document.createElement("span");
+            badge.classList.add("watchedBadge");
+            badge.innerText = "본 영화";
+            imageBox.appendChild(badge);
+        }
+        if (movie.myRating) {
+            const stars = document.createElement("p");
+            stars.classList.add("cardStars");
+            stars.innerText = "★".repeat(movie.myRating) + "☆".repeat(5 - movie.myRating);
+            span.appendChild(stars);
+        }
+        if (movie.memo) {
+            const memo = document.createElement("p");
+            memo.classList.add("cardMemo");
+            memo.innerText = `"${movie.memo}"`;
+            span.appendChild(memo);
+        }
+    }
+
+    span.appendChild(btn);
     titleBox.appendChild(span);
     card.append(imageBox, titleBox);
 
@@ -342,9 +438,49 @@ const clearMovies = () => {
     $movies.querySelectorAll(".mvContent").forEach((el) => el.remove());
 };
 
+// 즐겨찾기 탭 상태 (all | towatch | watched)
+let favTab = "all";
+
 const renderFavorites = () => {
     $favorites.innerHTML = "";
-    loadFavorites().forEach((movie) => $favorites.appendChild(createMovieCard(movie, true)));
+    const favorites = loadFavorites();
+
+    // 전체 / 볼 영화 / 본 영화 탭
+    const tabs = document.createElement("div");
+    tabs.classList.add("favTabs");
+    const tabDefs = [
+        { key: "all", label: `전체 (${favorites.length})` },
+        { key: "towatch", label: `볼 영화 (${favorites.filter((m) => !m.watched).length})` },
+        { key: "watched", label: `본 영화 (${favorites.filter((m) => m.watched).length})` },
+    ];
+    tabDefs.forEach(({ key, label }) => {
+        const tab = document.createElement("button");
+        tab.type = "button";
+        tab.classList.add("chip");
+        if (favTab === key) tab.classList.add("chipActive");
+        tab.innerText = label;
+        tab.onclick = () => {
+            favTab = key;
+            renderFavorites();
+        };
+        tabs.appendChild(tab);
+    });
+    $favorites.appendChild(tabs);
+
+    const filtered = favorites.filter((movie) => {
+        if (favTab === "watched") return movie.watched;
+        if (favTab === "towatch") return !movie.watched;
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        const empty = document.createElement("p");
+        empty.classList.add("favEmpty");
+        empty.innerText = "여기에 표시할 영화가 없습니다.";
+        $favorites.appendChild(empty);
+        return;
+    }
+    filtered.forEach((movie) => $favorites.appendChild(createMovieCard(movie, true)));
 };
 
 // ===== 화면 전환 =====

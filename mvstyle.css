@@ -182,6 +182,23 @@ body {
 .chipClear:hover {
   background: #333;
 }
+.chipActive {
+  background: #be213f;
+}
+
+/* 즐겨찾기 탭 & 빈 상태 */
+.favTabs {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 0.5em;
+}
+.favEmpty {
+  grid-column: 1 / -1;
+  color: #888;
+  font-family: "JalnanGothic";
+  padding: 2em 0;
+}
 
 .mvContent {
   position: relative;
@@ -196,6 +213,7 @@ body {
   transform: translateY(0);
 }
 .mvImage {
+  position: relative; /* 봤어요 뱃지 배치 기준 */
   width: 210px;
   height: 300px;
   overflow: hidden;
@@ -224,6 +242,28 @@ body {
 }
 .mvTitle .type {
   font-size: 15px;
+}
+.mvTitle .cardStars {
+  color: gold;
+  font-size: 15px;
+  margin: 0.2em 0;
+}
+.mvTitle .cardMemo {
+  color: #eee;
+  font-size: 12px;
+  margin: 0.2em 0.5em 0.5em;
+}
+.watchedBadge {
+  position: absolute;
+  top: 0.9em;
+  left: 0.9em;
+  z-index: 1;
+  padding: 0.3em 0.8em;
+  background: #be213f;
+  color: #fff;
+  font-family: "JalnanGothic";
+  font-size: 11px;
+  border-radius: 1em;
 }
 
 .btn {
@@ -377,6 +417,48 @@ body {
   display: flex;
   gap: 0.5em;
   margin-bottom: 1.2em;
+}
+
+/* 모달 내 기록(별점/봤어요/한 줄 감상) */
+.myRecord {
+  border-top: 1px solid #333;
+  padding-top: 0.8em;
+  margin-bottom: 1.2em;
+}
+.myRecordTitle {
+  margin: 0 0 0.4em;
+  color: #be213f;
+  font-size: 0.85em;
+}
+.recordRow {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+}
+.starBtn {
+  background: transparent;
+  border: none;
+  color: gold;
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 0 0.05em;
+}
+.memoRow {
+  display: flex;
+  gap: 0.4em;
+  margin-top: 0.6em;
+}
+.memoInput {
+  flex: 1;
+  background: rgb(43, 42, 42);
+  border: none;
+  border-radius: 0.5em;
+  color: #fff;
+  padding: 0.5em 0.8em;
+  font-family: inherit;
+}
+.memoInput:focus {
+  outline: 1px solid #be213f;
 }
 .modalInfo dl {
   margin: 0 0 1em;
