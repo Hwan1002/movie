@@ -1,262 +1,319 @@
-(() => {
-    console.log("DOM start script");
+// ===== 상수 및 상태 =====
+const API_KEY = "9172b236";
+const FAVORITE_KEY = "savedFavorite";
 
-    // DOM 요소 스타일 핸들러
-    const initStyle = () => {
-        const inputNode = document.querySelector("#searchKey");
-    };
+// 포스터가 없거나 로드에 실패했을 때 보여줄 대체 이미지 (외부 파일 불필요)
+const PLACEHOLDER_POSTER =
+    "data:image/svg+xml;charset=utf-8," +
+    encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="210" height="300">' +
+        '<rect width="100%" height="100%" fill="#1a1a1a"/>' +
+        '<text x="50%" y="50%" fill="#555" font-size="16" text-anchor="middle" dominant-baseline="middle">No Poster</text>' +
+        "</svg>"
+    );
 
-    // 키보드에서 엔터키 눌렀을 때 검색 실행
-    const onBlockEnter = (e) => {
-        if (e.keyCode === 13 && e.key === "Enter") {
-            e.preventDefault();
-            onSearch();
-        }
-    };
-    document.addEventListener("keydown", onBlockEnter);
-    initStyle();
-})();
-
-// 현재 상태값 저장
+// 현재 검색 상태값 저장
 const state = {
     nowPage: 1,
-    inputValue: '',
-    searchResult: [], // 검색 결과를 저장하는 배열
+    inputValue: "",
     totalPage: 0,
     isProcessing: false,
 };
-//즐겨찾기 버튼 클릭 시 텍스트 변경
-const favBtn = document.querySelector(".favBtn"); 
-    favBtn.addEventListener("click", function(){
-        if(favBtn.innerText==="즐겨찾기"){
-            favBtn.innerText="돌아가기";
-        }else{
-            favBtn.innerText="즐겨찾기";
-        }
-    })
-// 즐겨찾기 버튼 클릭 시 동작
 
-const favorClicked = () => {
-    console.log("즐겨찾기 버튼 클릭");
-    const movies = document.querySelector(".movies");
-    
-    getFavorite();
-    movies.classList.toggle("hide");
-    document.querySelector(".favorites").classList.toggle("hide");
+// 자주 쓰는 DOM 요소 (script가 defer라 DOM 준비 후 실행됨)
+const $movies = document.querySelector(".movies");
+const $favorites = document.querySelector(".favorites");
+const $errMsg = document.querySelector(".errMsg");
+const $favBtn = document.querySelector(".favBtn");
+const $searchBtn = document.querySelector(".searchBtn");
+const $searchBar = document.querySelector(".mvSearch");
+const $searchInput = document.querySelector("#searchKey");
+const $loader = document.querySelector(".loaderWrap");
+const $modalOverlay = document.querySelector(".modalOverlay");
+const $modal = document.querySelector(".modal");
+const $toast = document.querySelector(".toast");
+
+// ===== API =====
+const fetchMovies = async (keyword, page = 1) => {
+    const url = `https://www.omdbapi.com/?apikey=${API_KEY}&s=${encodeURIComponent(keyword)}&page=${page}`;
+    const response = await fetch(url);
+    return response.json();
 };
 
-// 즐겨찾기 버튼 클릭 시 영화 추가
-const loveClicked = (movie) => {
-    console.log("러브잇 버튼 클릭 loveClicked 실행");
-
-    // 로컬스토리지에서 즐겨찾기 목록을 가져옴
-    let favorites = JSON.parse(localStorage.getItem('savedFavorite')) || [];
-    // favorites가 배열인지 확인 및 초기화
-    if (!Array.isArray(favorites)) {
-        favorites = [];
-    }
-    // 영화가 이미 즐겨찾기에 있는지 확인
-    if (favorites.some(favorite => favorite.Title === movie.Title)) {
-        alert('이미 등록된 영화입니다.');
-    } else {
-        // 영화가 즐겨찾기에 없으면 추가
-        favorites.push(movie);
-        // 로컬스토리지에 즐겨찾기 목록을 저장
-        localStorage.setItem('savedFavorite', JSON.stringify(favorites));
-        getFavorite(movie);
-        alert(`${movie.Title} 영화가 즐겨찾기에 추가되었습니다.`);
-    }
+const fetchMovieDetail = async (imdbID) => {
+    const url = `https://www.omdbapi.com/?apikey=${API_KEY}&i=${imdbID}&plot=full`;
+    const response = await fetch(url);
+    return response.json();
 };
 
-// CANCEL 버튼 클릭 시 즐겨찾기 목록 초기화
-const cancelClicked = (title) => {
-
-   // 로컬스토리지에서 즐겨찾기 목록을 가져옴
-   let favorites = JSON.parse(localStorage.getItem("savedFavorite")) || [];
-   
-   // 즐겨찾기 목록에서 해당 제목의 영화를 제거
-   favorites = favorites.filter(movie => movie.Title !== title);
-
-   // 업데이트된 즐겨찾기 목록을 로컬스토리지에 저장
-   localStorage.setItem("savedFavorite", JSON.stringify(favorites));
-    alert(`${title}을 즐겨찾기에서 삭제하였습니다.`)
-   // 즐겨찾기 목록을 다시 불러와 갱신
-   getFavorite();
+// ===== 토스트 알림 =====
+let toastTimer;
+const showToast = (message) => {
+    $toast.innerText = message;
+    $toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $toast.classList.remove("show"), 2500);
 };
 
-// 로컬 스토리지에서 데이터 가져오기
-const getFavorite = () => {
-   
-    let getData = localStorage.getItem("savedFavorite");
-    const favoritesContainer = document.querySelector(".favorites");
-    favoritesContainer.innerHTML = ''; // 기존 즐겨찾기 목록 초기화
+// ===== 로딩 스피너 =====
+const showLoader = () => $loader.classList.remove("hide");
+const hideLoader = () => $loader.classList.add("hide");
 
-    if (!getData) {
-        return [];
-    } else {
-        const favorites = JSON.parse(getData);
-        favorites.forEach(movie => {
-            console.log(movie.Title); // 각 영화의 제목을 콘솔에 출력
-            const divNodeDummy = document.createElement('div');
-            divNodeDummy.classList.add('mvContent');
-            divNodeDummy.classList.add('favContent');
-            const divImgNode = document.createElement('div');
-            divImgNode.classList.add('mvImage');
-            const imgNode = document.createElement('img');
-            imgNode.src=movie.Poster;
-            imgNode.onerror=this.src='img/pic_error.png';
-            
-            const divTitle = document.createElement('div');
-            divTitle.classList.add('mvTitle');
-            const spanNode = document.createElement('span');
-            const titleP = document.createElement('p');
-            titleP.classList.add("title");
-            titleP.id="title";
-            titleP.innerText=movie.Title;
-            const typeP = document.createElement('p');
-            typeP.id="type";
-            typeP.innerText=movie.Type;
-            const btn = document.createElement("button");
-            btn.classList.add("btn");
-            btn.type="button";
-            btn.onclick = () => cancelClicked(movie.Title);
-
-            btn.innerText="CANCEL";
-
-            divTitle.appendChild(spanNode);
-            spanNode.appendChild(titleP);
-            spanNode.appendChild(typeP);
-            spanNode.appendChild(btn);
-
-            // spanNode.appendChild(button);
-            divImgNode.appendChild(imgNode);
-            divNodeDummy.appendChild(divImgNode);
-            divNodeDummy.appendChild(divTitle);
-
-            document.querySelector('.favorites').appendChild(divNodeDummy);
-        });
-        return favorites;
-    
-    }
-    
-};
-
-// 검색 버튼 클릭 시 검색창 표시/숨김
-const searchBtnClicked = () => {
-    console.log("검색버튼 클릭");
-    const searchBtn = document.querySelector(".searchBtn");
-    const searchBar = document.querySelector(".mvSearch");
-    searchBtn.classList.toggle("hide");
-    searchBar.classList.toggle("hide");
-};
-
-// 검색 결과로 영화 DIV 생성
-const createMvDiv = () => {
-    console.log("start create DIV");
-
-    for (const [index, data] of Object.entries(state.searchResult)) {
-        // mvcontent div영역
-        const divNodeDummy = document.createElement('div');
-        divNodeDummy.classList.add('mvContent');
-
-        // mvImage div 영역
-        const divImgNode = document.createElement('div');
-        divImgNode.classList.add('mvImage');
-        const imgNode = document.createElement('img');
-        imgNode.src = data['Poster'];
-        imgNode.onerror = () => imgNode.src = 'img/pic_error.png';
-
-        // mvTitle 영역
-        const divTitle = document.createElement('div');
-        divTitle.classList.add('mvTitle');
-        const spanNode = document.createElement('span');
-        const titleP = document.createElement('p');
-        titleP.classList.add("title");
-        titleP.id = "title";
-        titleP.innerText = data["Title"];
-        const typeP = document.createElement('p');
-        typeP.id = "type";
-        typeP.innerText = data["Type"];
-        const btn = document.createElement("button");
-        btn.classList.add('btn');
-        btn.textContent = 'LOVE IT!';
-        btn.onclick = () => loveClicked(data); // movie 객체를 넘김
-
-        divTitle.appendChild(spanNode);
-        spanNode.appendChild(titleP);
-        spanNode.appendChild(typeP);
-        spanNode.appendChild(btn);
-
-        divImgNode.appendChild(imgNode);
-        divNodeDummy.appendChild(divImgNode);
-        divNodeDummy.appendChild(divTitle);
-
-        document.querySelector('.movies').appendChild(divNodeDummy);
-    }
-};
-
-// 검색 버튼 클릭 이벤트 핸들러
-const onSearch = async () => {
+// ===== 즐겨찾기 로컬스토리지 =====
+const loadFavorites = () => {
     try {
-        const s = document.getElementById("searchKey").value;
-        const url = `https://www.omdbapi.com/?i=tt3896198&apikey=9172b236&s=${s}`;
-        const response = await fetch(url);
-        const result = await response.json();
-        const totalResult = result.totalResults;
-        const totalPage = Math.ceil(totalResult / 10);
-
-        state.inputValue += s;
-        state.totalPage += totalPage;
-        state.searchResult = result.Search;
-        
-        createMvDiv();
-
-    } catch (error) {
-        console.log('에러 원인 : ' + error);
-        const err = document.querySelector('.errMsg');
-        err.classList.remove("hide");
+        const data = JSON.parse(localStorage.getItem(FAVORITE_KEY));
+        return Array.isArray(data) ? data : [];
+    } catch {
+        return [];
     }
 };
 
-// 디바운스 함수
+const saveFavorites = (favorites) => {
+    localStorage.setItem(FAVORITE_KEY, JSON.stringify(favorites));
+};
+
+// ===== 상세 정보 모달 =====
+const openModal = async (imdbID) => {
+    $modalOverlay.classList.remove("hide");
+    document.body.style.overflow = "hidden"; // 모달이 열린 동안 배경 스크롤 잠금
+    $modal.innerHTML = '<p class="modalMessage">로딩 중...</p>';
+
+    try {
+        const detail = await fetchMovieDetail(imdbID);
+        if (detail.Response === "False") {
+            throw new Error(detail.Error);
+        }
+        renderModal(detail);
+    } catch (error) {
+        console.error("상세 정보 로드 실패:", error);
+        $modal.innerHTML = '<p class="modalMessage">상세 정보를 불러오지 못했습니다.</p>';
+    }
+};
+
+const closeModal = () => {
+    $modalOverlay.classList.add("hide");
+    document.body.style.overflow = "";
+};
+
+const renderModal = (detail) => {
+    const poster = detail.Poster && detail.Poster !== "N/A" ? detail.Poster : PLACEHOLDER_POSTER;
+    const rating = detail.imdbRating !== "N/A" ? `⭐ ${detail.imdbRating} / 10` : "평점 정보 없음";
+
+    $modal.innerHTML = `
+        <button type="button" class="modalClose" aria-label="닫기">&times;</button>
+        <div class="modalPoster">
+            <img src="${poster}" alt="${detail.Title}">
+        </div>
+        <div class="modalInfo">
+            <h2>${detail.Title}</h2>
+            <p class="modalMeta">${detail.Year} · ${detail.Runtime} · ${detail.Genre}</p>
+            <p class="modalRating">${rating}</p>
+            <dl>
+                <dt>감독</dt><dd>${detail.Director}</dd>
+                <dt>출연</dt><dd>${detail.Actors}</dd>
+            </dl>
+            <p class="modalPlot">${detail.Plot}</p>
+        </div>`;
+
+    $modal.querySelector(".modalClose").onclick = closeModal;
+};
+
+// ===== 카드 렌더링 (검색 결과 / 즐겨찾기 공용) =====
+const createMovieCard = (movie, isFavorite) => {
+    const card = document.createElement("div");
+    card.classList.add("mvContent");
+
+    const imageBox = document.createElement("div");
+    imageBox.classList.add("mvImage");
+    const img = document.createElement("img");
+    img.src = movie.Poster && movie.Poster !== "N/A" ? movie.Poster : PLACEHOLDER_POSTER;
+    img.alt = movie.Title;
+    img.onerror = () => {
+        img.onerror = null; // 대체 이미지도 실패할 경우 무한 루프 방지
+        img.src = PLACEHOLDER_POSTER;
+    };
+    imageBox.appendChild(img);
+
+    const titleBox = document.createElement("div");
+    titleBox.classList.add("mvTitle");
+    const span = document.createElement("span");
+    const titleP = document.createElement("p");
+    titleP.classList.add("title");
+    titleP.innerText = movie.Title;
+    const typeP = document.createElement("p");
+    typeP.classList.add("type");
+    typeP.innerText = movie.Type;
+
+    const btn = document.createElement("button");
+    btn.classList.add("btn");
+    btn.type = "button";
+    if (isFavorite) {
+        btn.innerText = "CANCEL";
+        btn.onclick = () => cancelClicked(movie);
+    } else {
+        btn.innerText = "LOVE IT!";
+        btn.onclick = () => loveClicked(movie);
+    }
+
+    span.append(titleP, typeP, btn);
+    titleBox.appendChild(span);
+    card.append(imageBox, titleBox);
+
+    // 카드 클릭 시 상세 모달 (즐겨찾기/삭제 버튼 클릭은 제외)
+    card.addEventListener("click", (e) => {
+        if (e.target.closest(".btn")) return;
+        openModal(movie.imdbID);
+    });
+
+    return card;
+};
+
+const renderMovies = (movies) => {
+    movies.forEach((movie) => $movies.appendChild(createMovieCard(movie, false)));
+};
+
+const clearMovies = () => {
+    $movies.querySelectorAll(".mvContent").forEach((el) => el.remove());
+};
+
+const renderFavorites = () => {
+    $favorites.innerHTML = "";
+    loadFavorites().forEach((movie) => $favorites.appendChild(createMovieCard(movie, true)));
+};
+
+// ===== 화면 전환 =====
+const showMoviesView = () => {
+    $movies.classList.remove("hide");
+    $favorites.classList.add("hide");
+    $favBtn.innerText = "즐겨찾기";
+};
+
+// 즐겨찾기 버튼 클릭 시 검색 결과 <-> 즐겨찾기 화면 전환
+const favorClicked = () => {
+    const willShowFavorites = $favorites.classList.contains("hide");
+    if (willShowFavorites) {
+        renderFavorites();
+        $movies.classList.add("hide");
+        $favorites.classList.remove("hide");
+        $favBtn.innerText = "돌아가기";
+    } else {
+        showMoviesView();
+    }
+};
+
+// 검색 버튼 클릭 시 검색창 표시
+const searchBtnClicked = () => {
+    $searchBtn.classList.toggle("hide");
+    $searchBar.classList.toggle("hide");
+    $searchInput.focus();
+};
+
+// ===== 즐겨찾기 추가/삭제 =====
+const loveClicked = (movie) => {
+    const favorites = loadFavorites();
+
+    // imdbID로 중복 확인 (동명 영화 구분 가능)
+    if (favorites.some((favorite) => favorite.imdbID === movie.imdbID)) {
+        showToast("이미 등록된 영화입니다.");
+        return;
+    }
+
+    favorites.push(movie);
+    saveFavorites(favorites);
+    showToast(`'${movie.Title}' 영화가 즐겨찾기에 추가되었습니다.`);
+};
+
+const cancelClicked = (movie) => {
+    const favorites = loadFavorites().filter((favorite) => favorite.imdbID !== movie.imdbID);
+    saveFavorites(favorites);
+    showToast(`'${movie.Title}'을(를) 즐겨찾기에서 삭제하였습니다.`);
+    renderFavorites();
+};
+
+// ===== 검색 =====
+const onSearch = async () => {
+    const keyword = $searchInput.value.trim();
+    if (!keyword || state.isProcessing) return;
+
+    state.isProcessing = true;
+    showLoader();
+    try {
+        const result = await fetchMovies(keyword);
+
+        // 새 검색이므로 이전 결과와 상태를 초기화
+        clearMovies();
+        state.inputValue = keyword;
+        state.nowPage = 1;
+        showMoviesView(); // 즐겨찾기 화면이었다면 검색 결과 화면으로 전환
+
+        // OMDb는 결과가 없어도 200 응답에 Response: "False"를 반환함
+        if (result.Response === "False" || !Array.isArray(result.Search)) {
+            state.totalPage = 0;
+            $errMsg.classList.remove("hide");
+            return;
+        }
+
+        $errMsg.classList.add("hide");
+        state.totalPage = Math.ceil(Number(result.totalResults) / 10);
+        renderMovies(result.Search);
+    } catch (error) {
+        console.error("검색 실패:", error);
+        $errMsg.classList.remove("hide");
+    } finally {
+        hideLoader();
+        state.isProcessing = false;
+    }
+};
+
+// ===== 무한 스크롤 =====
 const debounce = (callback, delay = 120) => {
     let timer;
-    return (e) => {
-        if (timer) {
-            clearTimeout(timer);
-        }
-        timer = setTimeout(() => {
-            callback(e);
-        }, delay);
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => callback(...args), delay);
     };
 };
 
-// 스크롤 시 무한 스크롤 처리
-const scrollBouce = async () => {
-    console.log(window.scrollY, window.innerHeight);
-    console.log(state.isProcessing);
-
+const onScrollEnd = async () => {
     const isScrollEnded = window.scrollY + window.innerHeight + 100 >= document.body.scrollHeight;
+    const canLoadMore =
+        state.inputValue &&
+        state.nowPage < state.totalPage &&
+        !$movies.classList.contains("hide"); // 즐겨찾기 화면에서는 동작하지 않음
 
-    if (isScrollEnded && !state.isProcessing) {
-        state.isProcessing = true;
+    if (!isScrollEnded || !canLoadMore || state.isProcessing) return;
 
-        try {
-            const url = `https://www.omdbapi.com/?i=tt3896198&apikey=9172b236&s=${state.inputValue}&page=${state.nowPage += 1}`;
-            console.log(url);
-            const response = await fetch(url);
-            const result = await response.json();
-            state.searchResult = result.Search;
-            createMvDiv();
-        } catch (error) {
-            console.log('wating to scroll ' + error);
-            const err = document.createElement('p');
-            err.className = 'errMsg';
-            document.querySelector('.movies').appendChild(err);
-        } finally {
-            state.isProcessing = false;
+    state.isProcessing = true;
+    showLoader();
+    try {
+        const result = await fetchMovies(state.inputValue, state.nowPage + 1);
+        if (result.Response === "True" && Array.isArray(result.Search)) {
+            state.nowPage += 1;
+            renderMovies(result.Search);
         }
+    } catch (error) {
+        console.error("추가 로드 실패:", error); // 다음 스크롤에서 자연스럽게 재시도됨
+    } finally {
+        hideLoader();
+        state.isProcessing = false;
     }
 };
 
-window.addEventListener('scroll', debounce(scrollBouce));
+// ===== 이벤트 바인딩 =====
+$searchBtn.addEventListener("click", searchBtnClicked);
+$favBtn.addEventListener("click", favorClicked);
+document.querySelector(".mvSearch button").addEventListener("click", onSearch);
+$searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        onSearch();
+    }
+});
+$modalOverlay.addEventListener("click", (e) => {
+    if (e.target === $modalOverlay) closeModal(); // 바깥 영역 클릭 시 닫기
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$modalOverlay.classList.contains("hide")) closeModal();
+});
+window.addEventListener("scroll", debounce(onScrollEnd));
