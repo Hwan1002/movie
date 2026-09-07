@@ -31,10 +31,13 @@ const state = {
     nowPage: 1,
     inputValue: "",
     totalPage: 0,
-    isProcessing: false,
+    isProcessing: false, // 무한스크롤 중복 요청 방지
     type: "", // 타입 필터 (movie | series | episode)
     year: "", // 연도 필터
 };
+
+// 검색 요청 시퀀스: 실시간 검색에서 늦게 도착한 이전 응답이 최신 결과를 덮지 않도록 함
+let searchSeq = 0;
 
 // 자주 쓰는 DOM 요소 (script가 defer라 DOM 준비 후 실행됨)
 const $movies = document.querySelector(".movies");
@@ -48,7 +51,6 @@ const $searchInput = document.querySelector("#searchKey");
 const $typeFilter = document.querySelector("#typeFilter");
 const $yearFilter = document.querySelector("#yearFilter");
 const $recentWrap = document.querySelector(".recentKeywords");
-const $loader = document.querySelector(".loaderWrap");
 const $sentinel = document.querySelector(".sentinel");
 const $topBtn = document.querySelector(".topBtn");
 const $modalOverlay = document.querySelector(".modalOverlay");
@@ -92,9 +94,23 @@ const showToast = (message) => {
     toastTimer = setTimeout(() => $toast.classList.remove("show"), 2500);
 };
 
-// ===== 로딩 스피너 =====
-const showLoader = () => $loader.classList.remove("hide");
-const hideLoader = () => $loader.classList.add("hide");
+// ===== 스켈레톤 로딩 =====
+const showSkeletons = (count) => {
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < count; i++) {
+        const card = document.createElement("div");
+        card.classList.add("mvContent", "skeleton", "show"); // show: 등장 애니메이션 없이 바로 표시
+        const box = document.createElement("div");
+        box.classList.add("mvImage", "skeletonBox");
+        card.appendChild(box);
+        fragment.appendChild(card);
+    }
+    $movies.appendChild(fragment);
+};
+
+const clearSkeletons = () => {
+    $movies.querySelectorAll(".skeleton").forEach((el) => el.remove());
+};
 
 // ===== 로컬스토리지 헬퍼 =====
 const loadList = (key) => {
@@ -111,6 +127,13 @@ const saveFavorites = (favorites) => {
     localStorage.setItem(FAVORITE_KEY, JSON.stringify(favorites));
 };
 const isFavorited = (imdbID) => loadFavorites().some((favorite) => favorite.imdbID === imdbID);
+
+// 즐겨찾기 버튼에 저장 개수 뱃지 표시 (즐겨찾기 화면에서는 '돌아가기'이므로 갱신 안 함)
+const refreshFavBtn = () => {
+    if ($favorites.classList.contains("hide")) {
+        $favBtn.innerText = `즐겨찾기 (${loadFavorites().length})`;
+    }
+};
 
 // ===== 최근 검색어 =====
 const saveRecentKeyword = (keyword) => {
@@ -152,6 +175,27 @@ const renderRecentKeywords = () => {
     $recentWrap.appendChild(clearBtn);
 };
 
+// ===== 공유 =====
+const shareMovie = async (detail) => {
+    // 상세 페이지 URL은 없으므로 해당 제목의 검색 결과 링크를 공유
+    const url = `${location.origin}${location.pathname}?s=${encodeURIComponent(detail.Title)}`;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: `HWANFLIX - ${detail.Title}`, url });
+        } catch {
+            // 사용자가 공유 시트를 닫은 경우 — 무시
+        }
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(url);
+        showToast("링크가 클립보드에 복사되었습니다.");
+    } catch {
+        showToast("링크 복사에 실패했습니다.");
+    }
+};
+
 // ===== 상세 정보 모달 =====
 const openModal = async (imdbID) => {
     $modalOverlay.classList.remove("hide");
@@ -188,7 +232,10 @@ const renderModal = (detail) => {
             <h2>${detail.Title}</h2>
             <p class="modalMeta">${detail.Year} · ${detail.Runtime} · ${detail.Genre}</p>
             <p class="modalRating">${rating}</p>
-            <button type="button" class="btn modalFavBtn"></button>
+            <div class="modalBtns">
+                <button type="button" class="btn modalFavBtn"></button>
+                <button type="button" class="btn modalShareBtn">공유하기</button>
+            </div>
             <dl>
                 <dt>감독</dt><dd>${detail.Director}</dd>
                 <dt>출연</dt><dd>${detail.Actors}</dd>
@@ -197,6 +244,7 @@ const renderModal = (detail) => {
         </div>`;
 
     $modal.querySelector(".modalClose").onclick = closeModal;
+    $modal.querySelector(".modalShareBtn").onclick = () => shareMovie(detail);
 
     // 모달 안에서 즐겨찾기 추가/해제 토글
     const $modalFavBtn = $modal.querySelector(".modalFavBtn");
@@ -303,7 +351,7 @@ const renderFavorites = () => {
 const showMoviesView = () => {
     $movies.classList.remove("hide");
     $favorites.classList.add("hide");
-    $favBtn.innerText = "즐겨찾기";
+    refreshFavBtn();
 };
 
 // 즐겨찾기 버튼 클릭 시 검색 결과 <-> 즐겨찾기 화면 전환
@@ -339,65 +387,75 @@ const loveClicked = (movie) => {
 
     favorites.push(movie);
     saveFavorites(favorites);
+    refreshFavBtn();
     showToast(`'${movie.Title}' 영화가 즐겨찾기에 추가되었습니다.`);
 };
 
 const cancelClicked = (movie) => {
     const favorites = loadFavorites().filter((favorite) => favorite.imdbID !== movie.imdbID);
     saveFavorites(favorites);
+    refreshFavBtn();
     showToast(`'${movie.Title}'을(를) 즐겨찾기에서 삭제하였습니다.`);
-    renderFavorites();
+    if (!$favorites.classList.contains("hide")) {
+        renderFavorites();
+    }
 };
 
-// ===== 검색 (사용자 검색 / 홈 추천 공용) =====
+// ===== 검색 (사용자 검색 / 실시간 검색 / 홈 추천 공용) =====
 const startSearch = async (keyword, makeTitle) => {
-    if (state.isProcessing) return;
-
-    state.isProcessing = true;
+    const seq = ++searchSeq; // 이 검색보다 늦게 시작된 검색이 있으면 이 결과는 버림
     state.type = $typeFilter.value;
     state.year = $yearFilter.value;
-    showLoader();
+
+    clearMovies();
+    $errMsg.classList.add("hide");
+    $sectionTitle.classList.add("hide");
+    showSkeletons(8);
+    showMoviesView(); // 즐겨찾기 화면이었다면 검색 결과 화면으로 전환
+
     try {
         const result = await fetchMovies(keyword);
+        if (seq !== searchSeq) return; // 더 최신 검색이 진행 중 → 이 응답 폐기
 
-        // 새 검색이므로 이전 결과와 상태를 초기화
-        clearMovies();
+        clearSkeletons();
         state.inputValue = keyword;
         state.nowPage = 1;
-        showMoviesView(); // 즐겨찾기 화면이었다면 검색 결과 화면으로 전환
 
         // OMDb는 결과가 없어도 200 응답에 Response: "False"를 반환함
         if (result.Response === "False" || !Array.isArray(result.Search)) {
             state.totalPage = 0;
-            $sectionTitle.classList.add("hide");
             $errMsg.classList.remove("hide");
             return;
         }
 
-        $errMsg.classList.add("hide");
         state.totalPage = Math.ceil(Number(result.totalResults) / 10);
         $sectionTitle.innerText = makeTitle(result.totalResults);
         $sectionTitle.classList.remove("hide");
         renderMovies(result.Search);
     } catch (error) {
+        if (seq !== searchSeq) return;
         console.error("검색 실패:", error);
-        $sectionTitle.classList.add("hide");
+        clearSkeletons();
         $errMsg.classList.remove("hide");
-    } finally {
-        hideLoader();
-        state.isProcessing = false;
     }
 };
 
 // 검색 상태를 URL 쿼리에 반영 (새로고침·뒤로가기·링크 공유 가능)
-const syncURL = (keyword) => {
+const syncURL = (keyword, { replace = false } = {}) => {
     const params = new URLSearchParams();
     params.set("s", keyword);
     if ($typeFilter.value) params.set("type", $typeFilter.value);
     if ($yearFilter.value) params.set("y", $yearFilter.value);
-    history.pushState(null, "", `?${params.toString()}`);
+
+    const url = `?${params.toString()}`;
+    if (replace) {
+        history.replaceState(null, "", url); // 실시간 검색: 히스토리를 쌓지 않음
+    } else {
+        history.pushState(null, "", url);
+    }
 };
 
+// 확정 검색 (Enter / Search 버튼 / 칩 클릭 / 필터 변경): 최근 검색어 저장 + 히스토리 추가
 const onSearch = () => {
     const keyword = $searchInput.value.trim();
     if (!keyword) return;
@@ -405,6 +463,15 @@ const onSearch = () => {
     saveRecentKeyword(keyword);
     renderRecentKeywords();
     syncURL(keyword);
+    startSearch(keyword, (total) => `'${keyword}' 검색 결과 (${total}편)`);
+};
+
+// 실시간 검색: 타이핑 멈추면 자동 검색 (2글자 이상, 히스토리는 교체만)
+const onLiveSearch = () => {
+    const keyword = $searchInput.value.trim();
+    if (keyword.length < 2) return;
+
+    syncURL(keyword, { replace: true });
     startSearch(keyword, (total) => `'${keyword}' 검색 결과 (${total}편)`);
 };
 
@@ -424,17 +491,21 @@ const loadMore = async () => {
     if (!canLoadMore || state.isProcessing) return;
 
     state.isProcessing = true;
-    showLoader();
+    const seq = searchSeq;
+    showSkeletons(4);
     try {
         const result = await fetchMovies(state.inputValue, state.nowPage + 1);
+        if (seq !== searchSeq) return; // 로드 중 새 검색이 시작됨 → 이 결과 폐기
+
+        clearSkeletons();
         if (result.Response === "True" && Array.isArray(result.Search)) {
             state.nowPage += 1;
             renderMovies(result.Search);
         }
     } catch (error) {
         console.error("추가 로드 실패:", error); // 다음 스크롤에서 자연스럽게 재시도됨
+        if (seq === searchSeq) clearSkeletons();
     } finally {
-        hideLoader();
         state.isProcessing = false;
     }
 };
@@ -475,6 +546,7 @@ $searchInput.addEventListener("keydown", (e) => {
         onSearch();
     }
 });
+$searchInput.addEventListener("input", debounce(onLiveSearch, 400));
 $modalOverlay.addEventListener("click", (e) => {
     if (e.target === $modalOverlay) closeModal(); // 바깥 영역 클릭 시 닫기
 });
@@ -516,4 +588,5 @@ const initFromURL = () => {
 };
 
 window.addEventListener("popstate", initFromURL); // 뒤로가기/앞으로가기 시 검색 상태 복원
+refreshFavBtn();
 initFromURL();
