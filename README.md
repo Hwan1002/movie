@@ -1,31 +1,115 @@
-# HWANFLIX 🎬
+<h1>HWANFLIX 🎬</h1>
 
-영화를 검색하고 즐겨찾기에 추가/삭제할 수 있는 바닐라 JS 토이 프로젝트
+<div className="readImg">
+    <img src="https://raw.githubusercontent.com/Hwan1002/movie/main/docs/home.png" style="width:100%" alt="메인 화면"/>
+</div>
+<br/>
+<h4 style="color:black; background-color:white; margin:0; padding:0;">넷플릭스 감성의 영화 검색 서비스 !</h4><br/>
 
-**Demo**: https://hwan1002.github.io/movie/
+<b>🍿 Vanilla JS 영화 검색 & 즐겨찾기 서비스</b><br/>
 
-## 기능
+<div className="readLineheight">
+ 프레임워크와 빌드 도구 없이 순수 자바스크립트로 만든 영화 검색 서비스입니다. <br/>
+ OMDb API로 영화를 검색하고, 상세 정보를 확인하고, 즐겨찾기로 나만의 컬렉션을 관리할 수 있습니다.
+</div>
+<br/>
 
-- **오늘의 추천** — 첫 화면에 랜덤 키워드 기반 추천 영화 자동 표시
-- **영화 검색** — [OMDb API](https://www.omdbapi.com/) 기반 제목 검색, 결과 개수 표시
-- **타입/연도 필터** — 영화·시리즈·에피소드 구분 및 연도별 검색
-- **URL 상태 동기화** — 검색 상태를 `?s=키워드&type=&y=` 쿼리로 유지, 새로고침·뒤로가기·링크 공유 지원
-- **검색 결과 캐싱** — 같은 검색(키워드+필터+페이지)은 재호출 없이 메모리 캐시 사용 (API 한도 절약)
-- **최근 검색어** — localStorage에 최대 8개 저장, 칩 클릭으로 재검색
-- **무한 스크롤** — `IntersectionObserver` 기반 다음 페이지 자동 로드 (마지막 페이지에서 자동 중단)
-- **카드 등장 애니메이션** — 스크롤로 화면에 들어오는 카드가 fade-in으로 등장
-- **상세 정보 모달** — 카드 클릭 시 줄거리, 평점, 감독, 출연진 표시, 모달 안에서 즐겨찾기 토글 (ESC / 바깥 클릭으로 닫기)
-- **즐겨찾기** — localStorage에 저장, `imdbID` 기준 중복 방지
-- **로딩 스피너 & 토스트 알림** — 요청 중 상태 표시, alert 대신 토스트 UI
-- **맨 위로 버튼** — 일정 스크롤 이후 표시, 클릭 시 부드럽게 상단 이동
-- **포스터 대체 이미지 & lazy loading** — 포스터가 없거나 로드 실패 시 인라인 SVG 플레이스홀더, 화면 밖 이미지는 지연 로드
+<p align="center">
+    <a href="https://hwan1002.github.io/movie/">
+        🔗 지금 바로 HWANFLIX 사용하기</a>
+</p>
+<br/>
 
-## 기술 스택
+<h4 style="color:black; background-color:white; margin:0; padding:0;">🚀 프로젝트 소개</h4>
 
-- HTML / CSS / Vanilla JavaScript (프레임워크, 빌드 도구 없음)
-- OMDb REST API + `fetch` / `async-await`
-- `localStorage`, `IntersectionObserver` (무한스크롤·등장 애니메이션), debounce
+<b>🔍 영화 검색 & 오늘의 추천
+</b>
+<div className="readImg">
+    <img
+        src="https://raw.githubusercontent.com/Hwan1002/movie/main/docs/search.gif"
+        style="width:100%"
+        alt="검색 데모"/>
+</div>
 
-## 참고
+<div className="readLineheight">
+<b>
+    "오늘은 어떤 영화를 볼까?"</b><br/>
+<ul>
+    <li>첫 화면에는 랜덤 키워드 기반의 '오늘의 추천' 영화가 자동으로 채워집니다.</li>
+    <li>타입(영화/시리즈/에피소드)과 연도 필터로 원하는 결과만 골라볼 수 있습니다.</li>
+    <li>최근 검색어가 칩으로 저장되어 클릭 한 번으로 재검색할 수 있습니다.</li>
+    <li>검색 상태가 URL(<code>?s=batman&type=movie</code>)로 동기화되어 새로고침·링크 공유가 가능합니다.</li>
+</ul>
+</div>
+<br/>
 
-- 클라이언트 전용 정적 사이트라 OMDb API 키가 소스 노출중. OMDb 무료 키는 공개를 전제로 하지만, 실서비스라면 서버 프록시를 통해 키를 숨겨함
+<b>🎢 무한 스크롤
+</b>
+<div className="readImg">
+    <img
+        src="https://raw.githubusercontent.com/Hwan1002/movie/main/docs/scroll.gif"
+        style="width:100%"
+        alt="무한 스크롤 데모"/>
+</div>
+
+<div className="readLineheight">
+<b>
+    "스크롤만 내리면 영화가 계속!"</b><br/>
+<ul>
+    <li>IntersectionObserver로 페이지 하단을 감지해 다음 페이지를 미리 불러옵니다.</li>
+    <li>새로 등장하는 카드는 fade-in 애니메이션으로 자연스럽게 나타납니다.</li>
+    <li>같은 검색(키워드+필터+페이지)은 메모리에 캐싱되어 불필요한 API 호출을 줄였습니다.</li>
+    <li>'맨 위로' 버튼으로 언제든 부드럽게 상단으로 돌아갈 수 있습니다.</li>
+</ul>
+</div>
+<br/>
+
+<b>❤️ 상세 정보 & 즐겨찾기
+</b>
+<div className="readImg">
+    <img
+        src="https://raw.githubusercontent.com/Hwan1002/movie/main/docs/favorite.gif"
+        style="width:100%"
+        alt="상세 모달과 즐겨찾기 데모"/>
+</div>
+
+<div className="readLineheight">
+<b>
+    "마음에 드는 영화는 내 컬렉션으로!"</b><br/>
+<ul>
+    <li>카드를 클릭하면 줄거리, IMDb 평점, 감독, 출연진을 모달로 보여줍니다.</li>
+    <li>모달 안에서 바로 즐겨찾기 추가/해제(LOVE IT!)가 가능합니다.</li>
+    <li>즐겨찾기는 localStorage에 저장되어 브라우저를 껐다 켜도 유지됩니다.</li>
+    <li>alert 대신 토스트 알림으로 부드러운 피드백을 제공합니다.</li>
+</ul>
+</div>
+
+<h1>
+    <b>🛠️ Tech Stack</b>
+</h1>
+
+<p align="center">
+    <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5"/>
+    <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3"/>
+    <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"/>
+    <img src="https://img.shields.io/badge/OMDb%20API-BE213F?style=for-the-badge" alt="OMDb API"/>
+    <img src="https://img.shields.io/badge/GitHub%20Pages-222222?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Pages"/>
+</p>
+
+<div className="readLineheight">
+<ul>
+    <li>프레임워크 없이 HTML / CSS / Vanilla JavaScript로만 구현</li>
+    <li><code>fetch</code> + <code>async/await</code>, <code>URLSearchParams</code>, History API</li>
+    <li><code>IntersectionObserver</code> — 무한스크롤 감지 & 카드 등장 애니메이션</li>
+    <li><code>localStorage</code> — 즐겨찾기·최근 검색어, 메모리 <code>Map</code> — 검색 결과 캐싱</li>
+</ul>
+</div>
+<br/>
+
+<div className="readLineheight">
+ ※ 클라이언트 전용 정적 사이트라 OMDb API 키가 소스에 노출됩니다. OMDb 무료 키는 공개를 전제로 하지만, 실서비스라면 서버 프록시를 통해 키를 숨겨야 합니다.
+</div>
+<br/>
+
+<b>✨ 지금 바로 HWANFLIX에서 인생 영화를 찾아보세요!
+</b>
