@@ -302,18 +302,6 @@ body {
 .btn:active {
   transform: scale(0.97);
 }
-/* 삭제(CANCEL): 평소엔 차분한 회색, 호버 시 진홍색으로 차오름 */
-.btnCancel {
-  color: #aaa;
-  border-color: #666;
-}
-.btnCancel::before {
-  background: #be213f;
-}
-.btnCancel:hover {
-  color: gold;
-  border-color: #be213f;
-}
 /* 중립 버튼(공유하기 등) */
 .btnGhost {
   color: #ccc;

@@ -279,9 +279,7 @@ const renderModal = (detail) => {
         Poster: detail.Poster,
     };
     const syncFavLabel = () => {
-        const favorited = isFavorited(detail.imdbID);
-        $modalFavBtn.innerText = favorited ? "✕ CANCEL" : "♥ LOVE IT!";
-        $modalFavBtn.classList.toggle("btnCancel", favorited);
+        $modalFavBtn.innerText = isFavorited(detail.imdbID) ? "✕ CANCEL" : "♥ LOVE IT!";
     };
 
     // 내 기록 섹션: 즐겨찾기한 영화만 별점/봤어요/한 줄 감상 편집 가능
@@ -388,7 +386,6 @@ const createMovieCard = (movie, isFavorite) => {
     btn.type = "button";
     if (isFavorite) {
         btn.innerText = "✕ CANCEL";
-        btn.classList.add("btnCancel");
         btn.onclick = () => cancelClicked(movie);
     } else {
         btn.innerText = "♥ LOVE IT!";
