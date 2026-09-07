@@ -21,10 +21,13 @@
             </div>
             <button type="button" class="favBtn mainBtn">즐겨찾기</button>
         </div>
+        <!-- 최근 검색어 칩 (검색창이 열려 있을 때만 표시) -->
+        <div class="recentKeywords hide"></div>
     </header>
 
     <main class="mvForm" id="mvForm">
         <div class="movies">
+            <p class="sectionTitle hide"></p>
             <p class="errMsg hide">검색 결과가 없습니다.</p>
         </div>
         <div class="favorites hide"></div> <!-- 즐겨찾기 내용이 표시될 영역. 기본적으로 숨김 처리 -->
@@ -34,6 +37,12 @@
     <div class="loaderWrap hide">
         <div class="loader"></div>
     </div>
+
+    <!-- 무한스크롤 감지용 센티널 -->
+    <div class="sentinel"></div>
+
+    <!-- 맨 위로 버튼 -->
+    <button type="button" class="topBtn" aria-label="맨 위로">↑</button>
 
     <!-- 영화 상세 정보 모달 -->
     <div class="modalOverlay hide">

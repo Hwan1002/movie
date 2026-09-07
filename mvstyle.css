@@ -116,10 +116,59 @@ body {
   font-size: 20px;
   font-family: "JalnanGothic";
 }
+.sectionTitle {
+  width: 100%;
+  margin: 0 0 0.5em;
+  color: #fff;
+  font-size: 22px;
+  font-family: "JalnanGothic";
+}
+
+/* 최근 검색어 칩 */
+.recentKeywords {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5em;
+  margin-top: 0.8em;
+  padding: 0 1em;
+}
+.recentKeywords.hide {
+  display: none;
+}
+.chip {
+  padding: 0.3em 1em;
+  background: transparent;
+  border: 1px solid #be213f;
+  border-radius: 2em;
+  color: #fff;
+  font-family: "JalnanGothic";
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.chip:hover {
+  background: #be213f;
+}
+.chipClear {
+  border-color: #555;
+  color: #888;
+}
+.chipClear:hover {
+  background: #333;
+}
 
 .mvContent {
   position: relative;
   cursor: pointer; /* 카드 클릭 시 상세 모달 */
+  /* 등장 애니메이션: JS(IntersectionObserver)가 화면 진입 시 .show를 붙임 */
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.mvContent.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 .mvImage {
   width: 210px;
@@ -341,6 +390,39 @@ body {
   .modalPlot {
     text-align: left;
   }
+}
+
+/* 무한스크롤 감지용 센티널 */
+.sentinel {
+  height: 1px;
+}
+
+/* 맨 위로 버튼 */
+.topBtn {
+  position: fixed;
+  right: 1.5em;
+  bottom: 1.5em;
+  z-index: 2;
+  width: 3em;
+  height: 3em;
+  background: #be213f;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: all 0.3s;
+}
+.topBtn.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.topBtn:hover {
+  background: #fa493c;
 }
 
 /* 토스트 알림 */

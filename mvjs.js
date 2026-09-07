@@ -1,6 +1,20 @@
 // ===== 상수 및 상태 =====
 const API_KEY = "9172b236";
 const FAVORITE_KEY = "savedFavorite";
+const RECENT_KEY = "recentKeywords";
+const RECENT_MAX = 8;
+
+// 첫 화면 "오늘의 추천"에 사용할 키워드 풀
+const RECOMMEND_KEYWORDS = [
+    "avengers",
+    "harry potter",
+    "mission impossible",
+    "spider man",
+    "star wars",
+    "jurassic",
+    "batman",
+    "lord of the rings",
+];
 
 // 포스터가 없거나 로드에 실패했을 때 보여줄 대체 이미지 (외부 파일 불필요)
 const PLACEHOLDER_POSTER =
@@ -24,11 +38,15 @@ const state = {
 const $movies = document.querySelector(".movies");
 const $favorites = document.querySelector(".favorites");
 const $errMsg = document.querySelector(".errMsg");
+const $sectionTitle = document.querySelector(".sectionTitle");
 const $favBtn = document.querySelector(".favBtn");
 const $searchBtn = document.querySelector(".searchBtn");
 const $searchBar = document.querySelector(".mvSearch");
 const $searchInput = document.querySelector("#searchKey");
+const $recentWrap = document.querySelector(".recentKeywords");
 const $loader = document.querySelector(".loaderWrap");
+const $sentinel = document.querySelector(".sentinel");
+const $topBtn = document.querySelector(".topBtn");
 const $modalOverlay = document.querySelector(".modalOverlay");
 const $modal = document.querySelector(".modal");
 const $toast = document.querySelector(".toast");
@@ -59,18 +77,59 @@ const showToast = (message) => {
 const showLoader = () => $loader.classList.remove("hide");
 const hideLoader = () => $loader.classList.add("hide");
 
-// ===== 즐겨찾기 로컬스토리지 =====
-const loadFavorites = () => {
+// ===== 로컬스토리지 헬퍼 =====
+const loadList = (key) => {
     try {
-        const data = JSON.parse(localStorage.getItem(FAVORITE_KEY));
+        const data = JSON.parse(localStorage.getItem(key));
         return Array.isArray(data) ? data : [];
     } catch {
         return [];
     }
 };
 
+const loadFavorites = () => loadList(FAVORITE_KEY);
 const saveFavorites = (favorites) => {
     localStorage.setItem(FAVORITE_KEY, JSON.stringify(favorites));
+};
+
+// ===== 최근 검색어 =====
+const saveRecentKeyword = (keyword) => {
+    const list = [keyword, ...loadList(RECENT_KEY).filter((k) => k !== keyword)].slice(0, RECENT_MAX);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+};
+
+const renderRecentKeywords = () => {
+    const list = loadList(RECENT_KEY);
+    const searchOpen = !$searchBar.classList.contains("hide");
+    $recentWrap.innerHTML = "";
+
+    if (!searchOpen || list.length === 0) {
+        $recentWrap.classList.add("hide");
+        return;
+    }
+    $recentWrap.classList.remove("hide");
+
+    list.forEach((keyword) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.classList.add("chip");
+        chip.innerText = keyword;
+        chip.onclick = () => {
+            $searchInput.value = keyword;
+            onSearch();
+        };
+        $recentWrap.appendChild(chip);
+    });
+
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.classList.add("chip", "chipClear");
+    clearBtn.innerText = "전체 삭제";
+    clearBtn.onclick = () => {
+        localStorage.removeItem(RECENT_KEY);
+        renderRecentKeywords();
+    };
+    $recentWrap.appendChild(clearBtn);
 };
 
 // ===== 상세 정보 모달 =====
@@ -119,6 +178,19 @@ const renderModal = (detail) => {
     $modal.querySelector(".modalClose").onclick = closeModal;
 };
 
+// ===== 카드 등장 애니메이션 =====
+const cardObserver = new IntersectionObserver(
+    (entries, observer) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add("show");
+                observer.unobserve(entry.target); // 한 번 나타난 카드는 관찰 종료
+            }
+        });
+    },
+    { threshold: 0.1 }
+);
+
 // ===== 카드 렌더링 (검색 결과 / 즐겨찾기 공용) =====
 const createMovieCard = (movie, isFavorite) => {
     const card = document.createElement("div");
@@ -166,6 +238,7 @@ const createMovieCard = (movie, isFavorite) => {
         openModal(movie.imdbID);
     });
 
+    cardObserver.observe(card); // 화면에 들어올 때 등장 애니메이션
     return card;
 };
 
@@ -206,6 +279,7 @@ const favorClicked = () => {
 const searchBtnClicked = () => {
     $searchBtn.classList.toggle("hide");
     $searchBar.classList.toggle("hide");
+    renderRecentKeywords();
     $searchInput.focus();
 };
 
@@ -231,10 +305,9 @@ const cancelClicked = (movie) => {
     renderFavorites();
 };
 
-// ===== 검색 =====
-const onSearch = async () => {
-    const keyword = $searchInput.value.trim();
-    if (!keyword || state.isProcessing) return;
+// ===== 검색 (사용자 검색 / 홈 추천 공용) =====
+const startSearch = async (keyword, makeTitle) => {
+    if (state.isProcessing) return;
 
     state.isProcessing = true;
     showLoader();
@@ -250,15 +323,19 @@ const onSearch = async () => {
         // OMDb는 결과가 없어도 200 응답에 Response: "False"를 반환함
         if (result.Response === "False" || !Array.isArray(result.Search)) {
             state.totalPage = 0;
+            $sectionTitle.classList.add("hide");
             $errMsg.classList.remove("hide");
             return;
         }
 
         $errMsg.classList.add("hide");
         state.totalPage = Math.ceil(Number(result.totalResults) / 10);
+        $sectionTitle.innerText = makeTitle(result.totalResults);
+        $sectionTitle.classList.remove("hide");
         renderMovies(result.Search);
     } catch (error) {
         console.error("검색 실패:", error);
+        $sectionTitle.classList.add("hide");
         $errMsg.classList.remove("hide");
     } finally {
         hideLoader();
@@ -266,23 +343,29 @@ const onSearch = async () => {
     }
 };
 
-// ===== 무한 스크롤 =====
-const debounce = (callback, delay = 120) => {
-    let timer;
-    return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => callback(...args), delay);
-    };
+const onSearch = () => {
+    const keyword = $searchInput.value.trim();
+    if (!keyword) return;
+
+    saveRecentKeyword(keyword);
+    renderRecentKeywords();
+    startSearch(keyword, (total) => `'${keyword}' 검색 결과 (${total}편)`);
 };
 
-const onScrollEnd = async () => {
-    const isScrollEnded = window.scrollY + window.innerHeight + 100 >= document.body.scrollHeight;
+// 첫 화면: 랜덤 키워드로 "오늘의 추천" 채우기
+const showRecommendation = () => {
+    const keyword = RECOMMEND_KEYWORDS[Math.floor(Math.random() * RECOMMEND_KEYWORDS.length)];
+    startSearch(keyword, () => "오늘의 추천 🎬");
+};
+
+// ===== 무한 스크롤 (IntersectionObserver 기반) =====
+const loadMore = async () => {
     const canLoadMore =
         state.inputValue &&
         state.nowPage < state.totalPage &&
         !$movies.classList.contains("hide"); // 즐겨찾기 화면에서는 동작하지 않음
 
-    if (!isScrollEnded || !canLoadMore || state.isProcessing) return;
+    if (!canLoadMore || state.isProcessing) return;
 
     state.isProcessing = true;
     showLoader();
@@ -300,6 +383,32 @@ const onScrollEnd = async () => {
     }
 };
 
+// 센티널이 화면 하단 근처에 들어오면 다음 페이지 로드 (200px 앞서 미리 로드)
+const scrollObserver = new IntersectionObserver(
+    (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+    },
+    { rootMargin: "200px" }
+);
+scrollObserver.observe($sentinel);
+
+// ===== 맨 위로 버튼 =====
+const debounce = (callback, delay = 120) => {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => callback(...args), delay);
+    };
+};
+
+window.addEventListener(
+    "scroll",
+    debounce(() => {
+        $topBtn.classList.toggle("show", window.scrollY > 600);
+    }, 100)
+);
+$topBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+
 // ===== 이벤트 바인딩 =====
 $searchBtn.addEventListener("click", searchBtnClicked);
 $favBtn.addEventListener("click", favorClicked);
@@ -316,4 +425,6 @@ $modalOverlay.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$modalOverlay.classList.contains("hide")) closeModal();
 });
-window.addEventListener("scroll", debounce(onScrollEnd));
+
+// ===== 초기 화면 =====
+showRecommendation();
