@@ -99,11 +99,12 @@ body {
 .movies,
 .favorites {
   margin-top: 100px; /* 헤더 아래 그라데이션 페이드 영역만큼만 확보 */
-  display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: 30px 20px;
-  width: min(90vw, 500px);
+  /* 카드(210px)가 들어갈 수 있는 만큼 열 생성: 데스크톱 4열, 태블릿 3열, 모바일 1~2열 */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 210px);
+  justify-content: center;
+  gap: 30px 24px;
+  width: min(94vw, 960px);
   text-align: center;
   padding-bottom: 2em;
 }
@@ -111,13 +112,13 @@ body {
   display: none;
 }
 .errMsg {
-  width: 100%;
+  grid-column: 1 / -1; /* 그리드 한 줄 전체 차지 */
   color: #fff;
   font-size: 20px;
   font-family: "JalnanGothic";
 }
 .sectionTitle {
-  width: 100%;
+  grid-column: 1 / -1;
   margin: 0 0 0.5em;
   color: #fff;
   font-size: 22px;
