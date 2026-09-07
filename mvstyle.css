@@ -106,7 +106,10 @@ body {
 .favBtn,
 .searchBtn {
   margin-top: 2em;
-  width: 6em;
+  min-width: 6em;
+  padding: 0 0.8em;
+  white-space: nowrap; /* 뱃지 숫자로 글자가 두 줄이 되며 버튼이 떠 보이는 것 방지 */
+  vertical-align: middle;
   height: 2.5em;
   background: #be213f;
   border-radius: 25px;
